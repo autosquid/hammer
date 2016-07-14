@@ -409,3 +409,12 @@ def loadopencvyaml(c):
     if c.startswith(wicked_legacy):
         c = "%YAML 1.1" + os.linesep + "---" + c[len(wicked_legacy):]
     return yaml.load(c)
+
+def filename2streamwrapper(func):
+    def f_(fname, *args, **kargs):
+        with open(fname, 'r') as f:
+            s = f.read()
+            return func(s, *args, **kargs)
+    return f_
+
+loadopencvyamlfile = filename2streamwrapper(loadopencvyaml)
