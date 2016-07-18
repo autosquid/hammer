@@ -223,8 +223,9 @@ def extract_bb(mask):
     return cv2.boundingRect(contours[np.argmax(As)])
 
 
-def expand_bb(bb, sz):
-    margin = (bb[2] * 0.2, bb[3] * 0.2)
+def expand_bb(bb, sz, marginfactor=0.2):
+    margin = (bb[2] * marginfactor, bb[3] * marginfactor)
+
     nbb = (int(bb[0] - margin[0] / 2), int(bb[1] - margin[1] / 2),
            int(bb[2] + margin[0]), int(bb[3] + margin[1]))
     x = 0 if nbb[0] < 0 else nbb[0]
