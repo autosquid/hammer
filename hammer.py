@@ -436,7 +436,7 @@ getcolor = lambda x: [int(f*255) for f in colors.ColorConverter().to_rgb(x)[::-1
 
 ####Patterns#####
 
-def cached_run(f2run, cache_checker, rwfilenames, save_method, load_method, force = False):
+def cached_run(f2run, rwfilenames, save_method, load_method, force = False):
     """ cache(save) to a pointed filename(s)
 
     rwfilenames can be a list or a string type
@@ -459,3 +459,9 @@ def cached_run(f2run, cache_checker, rwfilenames, save_method, load_method, forc
         ret = apply(f2run)
         save_method(rwfilenames, ret)
         return ret
+
+def make_cached_run(save_method, load_method):
+    """helper when save/load method are pointed (which is usually the case)"""
+    def f(f2run, rwfilenames, force):
+        return cached_run(f2run, rwfilenames, save_method, load_method, force)
+    return f
