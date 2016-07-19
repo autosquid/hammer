@@ -4,13 +4,10 @@ Created on Jun 17, 2013
 '''
 
 import numpy as np
-import os
-import errno
-import itertools
+import os, errno, itertools
 import cv2
 from PIL import Image
 import numpy as np
-import yaml
 
 
 def dirName(path):
@@ -379,6 +376,7 @@ def ezProject(pts, R, T, K):
 
 
 def cmap(name=None, nchannel=3):
+    """deprecated: to drop"""
     if name is None:
         return np.random.randint(0,255,nchannel)
 
@@ -394,6 +392,9 @@ def cmap(name=None, nchannel=3):
     else:
         return name
 
+
+#########yaml##########
+import yaml
 
 def opencv_matrix(loader, node):
     mapping = loader.construct_mapping(node, deep=True)
@@ -419,3 +420,14 @@ def filename2streamwrapper(func):
     return f_
 
 loadopencvyamlfile = filename2streamwrapper(loadopencvyaml)
+
+
+######Math########
+
+def combine_rigid (outter_R, outter_T, inner_R, inner_T):
+    """oR (iRX + iT) + oT = oR iR X + oR iT +oT"""
+    return np.dot(outter_R, inner_R), np.dot(outter_R, inner_T) + outter_T
+
+#########
+from matplotlib import colors
+getcolor = lambda x: [int(f*255) for f in colors.ColorConverter().to_rgb(x)[::-1]]
