@@ -8,6 +8,7 @@ import os, errno, itertools
 import cv2
 from PIL import Image
 import numpy as np
+import six
 
 
 def dirName(path):
@@ -431,3 +432,30 @@ def combine_rigid (outter_R, outter_T, inner_R, inner_T):
 #########
 from matplotlib import colors
 getcolor = lambda x: [int(f*255) for f in colors.ColorConverter().to_rgb(x)[::-1]]
+
+
+####Patterns#####
+
+def cached_run(f2run, cache_checker, rwfilenames, save_method, load_method, force = False):
+    """ cache(save) to a pointed filename(s)
+
+    rwfilenames can be a list or a string type
+
+    For a more general:
+    1. functools.lru_cache(maxsize=128, typed=False)
+    2. Joblib
+
+    """
+    def cache_checker(rwfilenames):
+        if isinstance(rwfilenames, six.string_types):
+            cache_exist = os.path.exists(rwfilenames)
+        else:
+            cache_exist = reduce(lambda x,y: x and y, map(os.path.exists, rwfilenames))
+        return cache_exist
+
+    if (cache_checker(rwfilenames) is True and force is False):
+        return load_method(rwfilenames)
+    else:
+        ret = apply(f2run)
+        save_method(rwfilenames, ret)
+        return ret
