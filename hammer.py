@@ -368,6 +368,7 @@ def toAffineRT(R, T):
     rt[0:3, 3] = T
     return rt
 
+
 def transformEntity(R, T, E):
     return map(lambda e: np.dot(R, e)+T, E)
 
@@ -406,7 +407,6 @@ def opencv_matrix(loader, node):
 
 yaml.add_constructor(u"tag:yaml.org,2002:opencv-matrix", opencv_matrix)
 
-
 def loadopencvyaml(c):
     wicked_legacy = "%YAML:1.0"
     if c.startswith(wicked_legacy):
@@ -424,18 +424,39 @@ loadopencvyamlfile = filename2streamwrapper(loadopencvyaml)
 
 
 ######Math########
+def get_unit_vector(vector):
+    """ Returns the unit vector of the vector.  """
+    return vector / np.linalg.norm(vector)
+
+
+def angle_between(v1, v2):
+    """ Returns the angle in radians between vectors 'v1' and 'v2'::
+
+            >>> angle_between((1, 0, 0), (0, 1, 0))
+            1.5707963267948966
+            >>> angle_between((1, 0, 0), (1, 0, 0))
+            0.0
+            >>> angle_between((1, 0, 0), (-1, 0, 0))
+            3.141592653589793
+    """
+
+    v1_u = get_unit_vector(v1)
+    v2_u = get_unit_vector(v2)
+    return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
+
 
 def combine_rigid (outter_R, outter_T, inner_R, inner_T):
     """oR (iRX + iT) + oT = oR iR X + oR iT +oT"""
     return np.dot(outter_R, inner_R), np.dot(outter_R, inner_T) + outter_T
 
+
 #########
 from matplotlib import colors
+
 getcolor = lambda x: [int(f*255) for f in colors.ColorConverter().to_rgb(x)[::-1]]
 
 
 ####Patterns#####
-
 def cached_run(f2run, rwfilenames, save_method, load_method, force = False):
     """ cache(save) to a pointed filename(s)
 
