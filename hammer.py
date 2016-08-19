@@ -213,7 +213,8 @@ def remove_exif(f):
     image_without_exif.save(f)
 
 
-def extract_bb(mask):
+def extract_bb(origin_mask):
+    mask = np.copy(origin_mask)
     _, contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if len (contours) == 0:
         return None
