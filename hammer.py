@@ -448,13 +448,14 @@ def angle_between(v1, v2):
 
 def combine_rigid (outter_R, outter_T, inner_R, inner_T):
     """oR (iRX + iT) + oT = oR iR X + oR iT +oT"""
-    return np.dot(outter_R, inner_R), np.dot(outter_R, inner_T) + outter_T
+    return np.dot(outter_R, inner_R), np.dot(outter_R, inner_T.reshape(-1)) + outter_T.reshape(-1)
 
 
 #########
 from matplotlib import colors
 
-getcolor = lambda x: [int(f*255) for f in colors.ColorConverter().to_rgb(x)[::-1]]
+def getcolor (x):
+    return [int(f*255) for f in colors.ColorConverter().to_rgb(x)[::-1]]
 
 
 ####Patterns#####
