@@ -488,3 +488,8 @@ def make_cached_run(save_method, load_method):
     def f(f2run, rwfilenames, force):
         return cached_run(f2run, rwfilenames, save_method, load_method, force)
     return f
+
+def AddAlphaChannel(im, w=255):
+    channels = cv2.split(im)
+    alpha = np.ones_like(channels[0], dtype=np.uint8)*np.uint8(w)
+    return cv2.merge(channels+[alpha])
