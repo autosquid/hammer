@@ -3,6 +3,7 @@ Created on Jun 17, 2013
 @author: WZ, justin.seeley.cn@gmail.com
 '''
 
+
 import numpy as np
 import os, errno, itertools
 import cv2
@@ -194,8 +195,8 @@ def test_splitall():
              'usr/local/Cellar/', '', '/', 'users', 'users/']
     result = [
         ['/', 'usr', 'local', 'Cellar'
-         ]['/', 'usr', 'local', 'Cellar', '']['usr', 'local', 'Cellar'][
-             'usr', 'local', 'Cellar', '']['']['/']['users'], ['users', '']
+        ]['/', 'usr', 'local', 'Cellar', '']['usr', 'local', 'Cellar'][
+            'usr', 'local', 'Cellar', '']['']['/']['users'], ['users', '']
     ]
     for p, rp in zip(paths, result):
         assert (splitall(p) == rp)
@@ -338,14 +339,14 @@ def pointVisibility(vp_pos, points, faces3d):
                 I = pv.Intersection(R, p[0], None)
                 if I.separation < rule_intersection.separation-1e-4:
                     visible = False
-        visibility.append(visible)
+                    visibility.append(visible)
     return visibility
 
 def edgeVisibility(vp_pos, edges, faces3d):
     if len(np.array(edges).shape) == 2:
         edges = np.array(edges).reshape(-1,2,3)
-    samplepoints = [(e[0]+e[1])/2.0 for e in edges]
-    visibility =  pointVisibility(vp_pos, samplepoints, faces3d)
+        samplepoints = [(e[0]+e[1])/2.0 for e in edges]
+        visibility =  pointVisibility(vp_pos, samplepoints, faces3d)
     return visibility
 
 def detect_lines(images, draw=False):
@@ -493,3 +494,12 @@ def AddAlphaChannel(im, w=255):
     channels = cv2.split(im)
     alpha = np.ones_like(channels[0], dtype=np.uint8)*np.uint8(w)
     return cv2.merge(channels+[alpha])
+
+
+def P2KRT(P):
+    """decompose a projection matrix into K, R, T
+    Note the T part of opencv decomposeProjectionMatrix is indeed the position of camera center in affine space (length of 4)
+    """
+    K, R, C = cv2.decomposeProjectionMatrix(P)[0:3]
+    T = -R.dot(C[0:3]/C[-1])
+    return (K, R, T.reshape(-1))
