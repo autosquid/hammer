@@ -137,15 +137,16 @@ def numberedImages(dirname):
     return [allImagewithbase(dirname, f) for f in lists]
 
 
-def makedir_p(result_dir):
+def makedir_p(*result_dirs):
     '''makedir -p in python without raise exception
     '''
-    try:
-        os.makedirs(result_dir)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
-    return result_dir
+    for result_dir in result_dirs:
+        try:
+            os.makedirs(result_dir)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+    return result_dirs
 
 
 def vectorize_param(params):
