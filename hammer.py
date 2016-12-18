@@ -10,7 +10,11 @@ import cv2
 from PIL import Image
 import numpy as np
 import six
+import logging
 
+logging.basicConfig()
+lg = logging.getLogger("pongee.hammer")
+lg.setLevel(logging.DEBUG)
 
 def dirName(path):
     '''
@@ -479,15 +483,17 @@ def cached_run(f2run, rwfilenames, save_method, load_method, force = False):
         return cache_exist
 
     if (cache_checker(rwfilenames) is True and force is False):
+        lg.debug("re-use existing: {}".format(rwfilenames))
         return load_method(rwfilenames)
     else:
+        lg.debug("calculate and cache")
         ret = apply(f2run)
         save_method(rwfilenames, ret)
         return ret
 
 def make_cached_run(save_method, load_method):
     """helper when save/load method are pointed (which is usually the case)"""
-    def f(f2run, rwfilenames, force):
+    def f(f2run, rwfilenames, force=False):
         return cached_run(f2run, rwfilenames, save_method, load_method, force)
     return f
 
@@ -504,3 +510,20 @@ def P2KRT(P):
     K, R, C = cv2.decomposeProjectionMatrix(P)[0:3]
     T = -R.dot(C[0:3]/C[-1])
     return (K, R, T.reshape(-1))
+
+x = np.array([1.0, 0.0, 0.0])
+y = np.array([0.0, 1.0, 0.0])
+z = np.array([0.0, 0.0, 1.0])
+
+g = np.array([0.0, 0.0, -1.0])
+n = np.array([0.0, 1.0, 0.0])
+
+
+def logged_call(lg):
+    def accept(f):
+        def _F(*args, **kargs):
+            ret = f(*args, **kargs)
+            lg.debug("call {} with result {}".format(str(f), ret))
+            return ret
+        return _F
+    return accept
