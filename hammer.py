@@ -415,10 +415,17 @@ def opencv_matrix(loader, node):
 yaml.add_constructor(u"tag:yaml.org,2002:opencv-matrix", opencv_matrix)
 
 def loadopencvyaml(c):
+    lines = c.splitlines()
     wicked_legacy = "%YAML:1.0"
-    if c.startswith(wicked_legacy):
+
+    if lines[0] == wicked_legacy:
+        lines[0] = "%YAML 1.1"
+    if lines[1] == '---':
+        c2 = os.linesep.join(lines)
+        return yaml.load(c2)
+    else:
         c = "%YAML 1.1" + os.linesep + "---" + c[len(wicked_legacy):]
-    return yaml.load(c)
+        return yaml.load(c)
 
 def filename2streamwrapper(func):
     def f_(fname, *args, **kargs):
@@ -431,6 +438,12 @@ loadopencvyamlfile = filename2streamwrapper(loadopencvyaml)
 
 
 ######Math########
+def make_unit_vector(axis, ndim=3):
+    avec = np.zeros(ndim)
+    avec[axis] = 1.0
+    return avec
+
+
 def get_unit_vector(vector):
     """ Returns the unit vector of the vector.  """
     return vector / np.linalg.norm(vector)
@@ -527,3 +540,19 @@ def logged_call(lg):
             return ret
         return _F
     return accept
+
+import new
+from types import MethodType
+
+class Proxy(object):
+    def __init__(self, atarget):
+        self._target = atarget
+
+    def __getattr__(self, aname):
+        atarget = self._target
+        f = getattr(atarget, aname)
+        if isinstance(f, MethodType):
+            # Rebind the method to the atarget.
+            return new.instancemethod(f.im_func, self, atarget.__class__)
+        else:
+            return f
