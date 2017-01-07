@@ -556,3 +556,6 @@ class Proxy(object):
             return new.instancemethod(f.im_func, self, atarget.__class__)
         else:
             return f
+
+def getonlybasename(x):
+    return os.path.splitext(os.path.basename(x)[0]
