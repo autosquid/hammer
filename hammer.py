@@ -558,4 +558,4 @@ class Proxy(object):
             return f
 
 def getonlybasename(x):
-    return os.path.splitext(os.path.basename(x)[0]
+    return os.path.splitext(os.path.basename(x))[0]
