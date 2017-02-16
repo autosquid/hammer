@@ -11,6 +11,7 @@ from PIL import Image
 import numpy as np
 import six
 import logging
+import math
 
 logging.basicConfig()
 lg = logging.getLogger("pongee.hammer")
@@ -38,12 +39,31 @@ def isImage(f):
     return len(f) > 4 and f[-3:] in allowedimageformats()
 
 
-def listImages(basedir):
+def listImagesNonRec(basedir):
     '''
     Return: image files in this dir
     '''
-    return [os.path.join(basedir, f) for f in os.listdir(basedir)
-            if isImage(f)]
+    return [os.path.join(basedir, f) for f in os.listdir(basedir) if isImage(f)]
+
+
+def listImagesRec(basedir):
+    allfiles = []
+    for d in os.listdir(basedir):
+        f = os.path.join(basedir, d)
+        if d not in ['.', '..'] and os.path.isdir(f):
+            allfiles += listImagesRec(f)
+        elif isImage(f):
+            allfiles.append(f)
+        else:
+            pass
+    return allfiles
+
+
+def listImages(basedir, recursive=False):
+    if not recursive:
+        return listImagesNonRec(basedir)
+    else:
+        return listImagesRec(basedir)
 
 
 def filenameFromPath(path):
@@ -465,6 +485,29 @@ def angle_between(v1, v2):
     return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
 
 
+def sphereFit(spX,spY,spZ):
+    #   Assemble the A matrix
+    spX = np.array(spX)
+    spY = np.array(spY)
+    spZ = np.array(spZ)
+    A = np.zeros((len(spX),4))
+    A[:,0] = spX*2
+    A[:,1] = spY*2
+    A[:,2] = spZ*2
+    A[:,3] = 1
+
+    #   Assemble the f matrix
+    f = np.zeros((len(spX),1))
+    f[:,0] = (spX*spX) + (spY*spY) + (spZ*spZ)
+    C, residules, rank, singval = np.linalg.lstsq(A,f)
+
+    #   solve for the radius
+    t = (C[0]*C[0])+(C[1]*C[1])+(C[2]*C[2])+C[3]
+    radius = math.sqrt(t)
+
+    return radius, C[0], C[1], C[2]
+
+
 def combine_rigid (outter_R, outter_T, inner_R, inner_T):
     """oR (iRX + iT) + oT = oR iR X + oR iT +oT"""
     return np.dot(outter_R, inner_R), np.dot(outter_R, inner_T.reshape(-1)) + outter_T.reshape(-1)
@@ -559,3 +602,35 @@ class Proxy(object):
 
 def getonlybasename(x):
     return os.path.splitext(os.path.basename(x))[0]
+
+
+############ Decorators ##########
+def dec_append_print(f):
+    def _real_(*args):
+        thelist = f(args)
+        for f in thelist:
+            print f
+        return thelist
+
+    return _real_
+
+def slerp(p0, p1, t):
+    omega = np.arccos(np.dot(p0/np.linalg.norm(p0), p1/np.linalg.norm(p1)))
+    so = np.sin(omega)
+    return np.sin((1.0-t)*omega) / so * p0 + np.sin(t*omega)/so * p1
+
+def moc_provide_param(*moc_args, **moc_kargs):
+    def dec_(f):
+        def _f(*params, **kargs):
+            # if: providing params. from un-decorated function, then use them
+            # else:
+            if params and kargs:
+                return f(*params, **kargs)
+            if params and not kargs:
+                return f(*params)
+            if not params and kargs:
+                return f(**kargs)
+            return f(*moc_args, **moc_kargs)
+        return _f
+
+    return dec_
