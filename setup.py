@@ -56,7 +56,7 @@ setup(
 
     py_modules=["hammer"],
 
-    install_requires=['Pillow', 'PyYAML', 'numpy'],
+    install_requires=['Pillow', 'PyYAML', 'numpy', 'six'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
