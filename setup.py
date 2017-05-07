@@ -57,6 +57,9 @@ setup(
     py_modules=["hammer"],
 
     install_requires=['Pillow', 'PyYAML', 'numpy', 'six'],
+    dependency_links=[
+        "git+https://github.com/autosquid/pvtrace.git"
+    ],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
