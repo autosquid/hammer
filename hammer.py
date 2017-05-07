@@ -29,7 +29,7 @@ def allowedimageformats():
     Return:
         allowed images formats
     '''
-    return ['bmp', 'jpg', 'png']
+    return ['bmp', 'jpg', 'png', 'BMP', 'JPG', 'PNG']
 
 
 def isImage(f):
@@ -634,3 +634,12 @@ def moc_provide_param(*moc_args, **moc_kargs):
         return _f
 
     return dec_
+
+#####loading#######
+
+import xmltodict
+def loadxmlobj(fh):
+    doc = xmltodict.parse(fh)
+    return doc
+
+loadxmlobjfromfile = filename2streamwrapper(loadxmlobj)
