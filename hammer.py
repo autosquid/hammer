@@ -643,3 +643,5 @@ def loadxmlobj(fh):
     return doc
 
 loadxmlobjfromfile = filename2streamwrapper(loadxmlobj)
+
+dir_x, dir_y, dir_z = np.eye(3)
