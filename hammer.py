@@ -2,8 +2,6 @@
 Created on Jun 17, 2013
 @author: WZ, justin.seeley.cn@gmail.com
 '''
-
-
 import numpy as np
 import os, errno, itertools
 import cv2
@@ -241,14 +239,18 @@ def remove_exif(f):
     os.remove(f)
     image_without_exif.save(f)
 
-
-def extract_bb(origin_mask):
+def findLargestContour(origin_mask):
     mask = np.copy(origin_mask)
     _, contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if len (contours) == 0:
         return None
     As = [cv2.contourArea(c) for c in contours]
-    return cv2.boundingRect(contours[np.argmax(As)])
+    return contours[np.argmax(As)]
+
+
+def extract_bb(origin_mask):
+    c = findLargestContour(origin_mask)
+    return cv2.boundingRect(c)
 
 
 def expand_bb(bb, sz, marginfactor=0.2):
@@ -271,7 +273,6 @@ def extract_rb(mask, factor=0.1):
     _, contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     R = cv2.minAreaRect(contours[0])
     return cv2.boxPoints((R[0], np.array(R[1])*(1-factor), R[2]))
-
 
 
 def tile_ims(images, tilesize=(200, 600), tilelayout=None):
@@ -434,7 +435,15 @@ def opencv_matrix(loader, node):
     mat.resize(mapping["rows"], mapping["cols"])
     return mat
 
+# A yaml representer is for dumping structs into a yaml node.
+# So for an opencv_matrix type (to be compatible with c++'s FileStorage) we save the rows, cols, type and flattened-data
+def opencv_matrix_representer(dumper, mat):
+    if len(mat.shape)>1: cols=int(mat.shape[1])
+    else: cols=1
+    mapping = {'rows': int(mat.shape[0]), 'cols': cols, 'dt': 'd', 'data': mat.reshape(-1).tolist()}
+    return dumper.represent_mapping(u"tag:yaml.org,2002:opencv-matrix", mapping)
 
+yaml.add_representer(np.ndarray, opencv_matrix_representer)
 yaml.add_constructor(u"tag:yaml.org,2002:opencv-matrix", opencv_matrix)
 
 def loadopencvyaml(c):
@@ -587,7 +596,6 @@ def logged_call(lg):
         return _F
     return accept
 
-import new
 from types import MethodType
 
 class Proxy(object):
@@ -599,7 +607,7 @@ class Proxy(object):
         f = getattr(atarget, aname)
         if isinstance(f, MethodType):
             # Rebind the method to the atarget.
-            return new.instancemethod(f.im_func, self, atarget.__class__)
+            return MethodType(f.im_func, self, atarget.__class__)
         else:
             return f
 
@@ -612,7 +620,7 @@ def dec_append_print(f):
     def _real_(*args):
         thelist = f(args)
         for f in thelist:
-            print f
+            print (f)
         return thelist
 
     return _real_
@@ -648,3 +656,53 @@ def loadxmlobj(fh):
 loadxmlobjfromfile = filename2streamwrapper(loadxmlobj)
 
 dir_x, dir_y, dir_z = np.eye(3)
+
+
+class CacheManager(object):
+    @classmethod
+    def get_corner_cache_file(cls, im_path):
+        yaml_cache_file_name = basename_mainpart(im_path) + ".yaml"
+        return yaml_cache_file_name
+
+
+def find_chessboard_corners_core(board_shape, im_path, cache_dst=None, skipexisting=True):
+    yaml_cache_file_name = os.path.join(cache_dst, basename_mainpart(im_path)) + ".yaml"
+
+    if cache_dst and skipexisting:
+        if os.path.exists(yaml_cache_file_name):
+            return True, loadopencvyamlfile(yaml_cache_file_name)['subpixel-corners']
+
+    im = cv2.imread(im_path, 0)
+    pattern_found, corners = cv2.findChessboardCorners(
+        im, board_shape, cv2.CALIB_CB_FAST_CHECK)
+
+    if pattern_found is False:
+        return pattern_found, None
+
+    corners = corners.reshape(-1, 2)
+    subcorners = np.copy(corners).astype(np.float32)
+
+    term = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT, 30, 0.1)
+    cv2.cornerSubPix(im, subcorners, (5, 5), (-1, -1), term)
+
+    if cache_dst is None:
+        return pattern_found, subcorners
+
+    # cache image with corners
+    im = cv2.imread(im_path)
+    cv2.drawChessboardCorners(im, board_shape, subcorners, pattern_found)
+    cv2.imwrite(os.path.join(cache_dst, os.path.basename(im_path)), im)
+
+    # cache corners
+    f = cv2.FileStorage(yaml_cache_file_name, cv2.FileStorage_WRITE)
+    f.write("corner detection result", pattern_found)
+    f.write("corners", corners)
+    f.write("subpixel-corners", subcorners)
+    f.release()
+
+    return pattern_found, subcorners
+
+
+class MyYamlDumper(yaml.Dumper):
+    def increase_indent(self, flow=False, indentless=False):
+        return super(MyYamlDumper, self).increase_indent(flow, False)
