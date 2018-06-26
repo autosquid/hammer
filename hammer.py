@@ -163,7 +163,6 @@ def numberedImages(dirname):
 
 
 def mkdir_p(*result_dirs):
-    '''
     for result_dir in result_dirs:
         try:
             os.makedirs(result_dir)
