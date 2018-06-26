@@ -15,7 +15,7 @@ logging.basicConfig()
 lg = logging.getLogger("pongee.hammer")
 lg.setLevel(logging.DEBUG)
 
-def basename_mainpart(path):
+def get_stem(path):
     return os.path.splitext(os.path.basename(path))[0]
 
 def dirName(path):
