@@ -350,32 +350,34 @@ def modelAABBFace(ext_points):
         return [ext_points[vlist[i]][i] for i in range(3)]
 
     return np.array([[getVertex(v) for v in f] for f in flist])
+ENABLE_TRACE = False
 
-import pvtrace as pv
+if ENABLE_TRACE:
+    import pvtrace as pv
 
-def pointVisibility(vp_pos, points, faces3d):
-    visibility = []
-    for v in points:
-        R = pv.Ray(vp_pos, v-vp_pos)
-        rule_intersection = pv.Intersection(R, v, None)
+    def pointVisibility(vp_pos, points, faces3d):
+        visibility = []
+        for v in points:
+            R = pv.Ray(vp_pos, v-vp_pos)
+            rule_intersection = pv.Intersection(R, v, None)
 
-        visible = True
-        for f in faces3d:
-            poly = pv.Polygon(f)
-            p = poly.intersection(R)
-            if p:
-                I = pv.Intersection(R, p[0], None)
-                if I.separation < rule_intersection.separation-1e-4:
-                    visible = False
-                    visibility.append(visible)
-    return visibility
+            visible = True
+            for f in faces3d:
+                poly = pv.Polygon(f)
+                p = poly.intersection(R)
+                if p:
+                    I = pv.Intersection(R, p[0], None)
+                    if I.separation < rule_intersection.separation-1e-4:
+                        visible = False
+                        visibility.append(visible)
+        return visibility
 
-def edgeVisibility(vp_pos, edges, faces3d):
-    if len(np.array(edges).shape) == 2:
-        edges = np.array(edges).reshape(-1,2,3)
-        samplepoints = [(e[0]+e[1])/2.0 for e in edges]
-        visibility =  pointVisibility(vp_pos, samplepoints, faces3d)
-    return visibility
+    def edgeVisibility(vp_pos, edges, faces3d):
+        if len(np.array(edges).shape) == 2:
+            edges = np.array(edges).reshape(-1,2,3)
+            samplepoints = [(e[0]+e[1])/2.0 for e in edges]
+            visibility =  pointVisibility(vp_pos, samplepoints, faces3d)
+        return visibility
 
 def detect_lines(images, draw=False):
     """detect lines with LSD with default param."""
