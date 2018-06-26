@@ -162,8 +162,7 @@ def numberedImages(dirname):
     return [allImagewithbase(dirname, f) for f in lists]
 
 
-def makedir_p(*result_dirs):
-    '''makedir -p in python without raise exception
+def mkdir_p(*result_dirs):
     '''
     for result_dir in result_dirs:
         try:
